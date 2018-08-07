@@ -566,6 +566,8 @@ class VoyagerBaseController extends Controller
                 }
                 fclose ( $handle );
             }
+	    // cleanup
+            Storage::disk('local')->delete('/files/' . $filename);
 
             return redirect()
                 ->route("voyager.{$dataType->slug}.index")
