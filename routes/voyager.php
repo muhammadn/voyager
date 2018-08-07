@@ -42,6 +42,8 @@ Route::group(['as' => 'voyager.'], function () {
 
                 Route::get($dataType->slug.'/order', $breadController.'@order')->name($dataType->slug.'.order');
                 Route::post($dataType->slug.'/order', $breadController.'@update_order')->name($dataType->slug.'.order');
+                Route::get($dataType->slug.'/import', $breadController.'@import')->name($dataType->slug.'.import');
+                Route::post($dataType->slug.'/import', $breadController.'@import_csv')->name($dataType->slug.'.import');
                 Route::resource($dataType->slug, $breadController);
             }
         } catch (\InvalidArgumentException $e) {

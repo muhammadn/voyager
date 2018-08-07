@@ -4,6 +4,7 @@ namespace TCG\Voyager\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use TCG\Voyager\Database\Schema\SchemaManager;
 use TCG\Voyager\Events\BreadDataAdded;
 use TCG\Voyager\Events\BreadDataDeleted;
@@ -502,6 +503,76 @@ class VoyagerBaseController extends Controller
             $i = $model->findOrFail($item->id);
             $i->$column = ($key + 1);
             $i->save();
+        }
+    }
+
+    public function import(Request $request)
+    {
+        $slug = $this->getSlug($request);
+
+        $dataType = Voyager::model('DataType')->where('slug', '=', $slug)->first();
+
+        // Check permission
+        $this->authorize('add', app($dataType->model_name));
+
+        $dataTypeContent = (strlen($dataType->model_name) != 0)
+                            ? new $dataType->model_name()
+                            : false;
+
+        // Check if BREAD is Translatable
+        $isModelTranslatable = is_bread_translatable($dataTypeContent);
+
+        $view = 'voyager::bread.import';
+
+        if (view()->exists("voyager::$slug.import")) {
+            $view = "voyager::$slug.import";
+        }
+
+        return Voyager::view($view, compact('dataType', 'isModelTranslatable'));
+    }
+
+    public function import_csv(Request $request)
+    {
+        $slug = $this->getSlug($request);
+
+        $dataType = Voyager::model('DataType')->where('slug', '=', $slug)->first();
+
+        // Check permission
+        $this->authorize('add', app($dataType->model_name));
+
+        $request->validate([
+         'file' => 'required|mimes:csv,txt',
+        ]);
+        if ($request->file('file')) {
+
+	    $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+            $filename = uniqid().'.'.$extension; 
+            Storage::disk('local')->putFileAs('/files/', $request->file('file'), $filename);
+
+            if (($handle = fopen(storage_path() . '/app/files/' . $filename, 'r' )) !== FALSE) {
+
+                $allRowsAsArray = [];
+                $header = fgetcsv($handle, 1000, ',');
+                while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
+                   $allRowsAsArray[] = array_combine($header, $data);
+                }
+
+                //print_r($allRowsAsArray);
+                foreach($allRowsAsArray as $value)
+                {
+                   DB::table($dataType->name)->insert($value);
+                }
+                fclose ( $handle );
+            }
+
+            return redirect()
+                ->route("voyager.{$dataType->slug}.index")
+                ->with([
+                        'message'    => __('voyager::generic.successfully_added_new')." {$dataType->display_name_singular}",
+                        'alert-type' => 'success',
+                    ]);
         }
     }
 }
