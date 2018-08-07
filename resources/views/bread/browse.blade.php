@@ -15,6 +15,11 @@
         @can('delete', app($dataType->model_name))
             @include('voyager::partials.bulk-delete')
         @endcan
+	@can('add' app($dataType->model_name))
+            <a href="{{ route('voyager.'.$dataType->slug.'.import') }}" class="btn btn-warning btn-add-new">
+                <i class="voyager-data"></i> <span>Bulk Import</span>
+            </a>
+        @endcan
         @can('edit', app($dataType->model_name))
             @if(isset($dataType->order_column) && isset($dataType->order_display_column))
                 <a href="{{ route('voyager.'.$dataType->slug.'.order') }}" class="btn btn-primary">
