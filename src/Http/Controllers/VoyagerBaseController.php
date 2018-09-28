@@ -556,6 +556,7 @@ class VoyagerBaseController extends Controller
                 $allRowsAsArray = [];
                 $header = fgetcsv($handle, 1000, ',');
                 while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
+                   $data = array_map("utf8_encode", $data);
                    $allRowsAsArray[] = array_combine($header, $data);
                 }
 
